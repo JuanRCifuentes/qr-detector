@@ -49,12 +49,9 @@ async function getPreparedVariants(imagePath) {
             attempts.push({ label: v.label, image: v.make() });
         }
     }
-
-    console.log(`Found ${attempts.length} variants.`);
     return attempts;
 }
 
 module.exports = {
     getPreparedVariants,
-    applyThreshold, // exported in case of future need
 };

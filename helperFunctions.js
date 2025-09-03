@@ -15,20 +15,24 @@ async function getImages(imagesFolder, allowedExtensions) {
         .filter((p) => allowedExtensions.includes(path.extname(p).toLowerCase()));
 
     if (imageFiles.length === 0) {
-        console.log(`No image files (${allowedExtensions.join(', ')}) found in: ${imagesFolder}`);
+        console.error(`No image files (${allowedExtensions.join(', ')}) found in: ${imagesFolder}`);
     }
 
     return imageFiles;
 }
 
-async function detectQrInImages(imageFiles, checkQRFunction) {
-    if (typeof checkQRFunction !== 'function') {
-        throw new Error('checkQRFunction is not a function');
-    }
+async function iterateImages(imageFiles, checkQRFunction) {
     let detectedCount = 0;
     for (const file of imageFiles) {
+        console.log('=====')
+
+        const startTime = process.hrtime.bigint();
         const hasQR = await checkQRFunction(file);
+        const endTime = process.hrtime.bigint();
+
+        console.log(`Time for ${path.basename(file)}: ${Number(endTime - startTime) / 1e6}ms`);
         console.log(`${path.basename(file)}: ${hasQR ? 'QR found' : 'No QR Found'}`);
+
         if (hasQR) detectedCount += 1;
     }
     return detectedCount;
@@ -36,13 +40,14 @@ async function detectQrInImages(imageFiles, checkQRFunction) {
 
 function logResults(times, imageCount) {
     const elapsedTime = Number(times.endTime - times.startTime) / 1e6;
+    console.log('=====')
     console.log(`Summary: ${imageCount.detectedCount}/${imageCount.imageFiles.length} image(s) with QR.`);
     console.log(`Total time: ${(elapsedTime / 1000).toFixed(3)}s (${elapsedTime.toFixed(0)} ms)`);
 }
 
 module.exports = {
     getImages,
-    detectQrInImages,
+    iterateImages,
     logResults,
     getQRChosenMethod,
 };
