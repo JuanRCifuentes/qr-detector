@@ -1,6 +1,5 @@
 const jsQR = require('jsqr');
 const { getPreparedVariants } = require('./imagePreprocessor');
-const {Jimp} = require("jimp");
 
 function decodeFromJimpImage(img) {
     const imageData = {
@@ -28,11 +27,6 @@ async function checkForQRCode(imagePath) {
         console.error(`Error processing ${imagePath}:`, err.message || err);
         return null;
     }
-
-    // const image = await Jimp.read(imagePath);
-    // image.greyscale();
-    // const qr = decodeFromJimpImage(image);
-    // return qr && qr.data;
 }
 
 module.exports = { checkForQRCode };
