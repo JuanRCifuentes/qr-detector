@@ -1,8 +1,7 @@
-const { Jimp } = require('jimp');
+const {Jimp} = require('jimp');
 const jsQR = require('jsqr');
 
 function decodeFromJimpImage(img) {
-    // Build ImageData-compatible object for jsQR
     const imageData = {
         data: new Uint8ClampedArray(img.bitmap.data),
         width: img.bitmap.width,
@@ -13,13 +12,13 @@ function decodeFromJimpImage(img) {
         imageData.data,
         imageData.width,
         imageData.height,
-        { inversionAttempts: 'attemptBoth' }
+        {inversionAttempts: 'attemptBoth'}
     );
 }
 
 function applyThreshold(src, threshold) {
     const img = src.clone();
-    const { width, height, data } = img.bitmap;
+    const {width, height, data} = img.bitmap;
     // Assumes grayscale input for best results
     for (let y = 0; y < height; y++) {
         for (let x = 0; x < width; x++) {
@@ -49,12 +48,12 @@ async function checkForQRCode(imagePath) {
             const rotated = base.clone().rotate(angle, false);
 
             const variants = [
-                { label: `angle ${angle}°`, make: () => rotated },
-                { label: `angle ${angle}°, contrast+`, make: () => rotated.clone().contrast(0.5) },
-                { label: `angle ${angle}°, normalize`, make: () => rotated.clone().normalize() },
-                { label: `angle ${angle}°, thr128`, make: () => applyThreshold(rotated, 128) },
-                { label: `angle ${angle}°, thr180`, make: () => applyThreshold(rotated, 180) },
-                { label: `angle ${angle}°, blur1+thr140`, make: () => applyThreshold(rotated.clone().blur(1), 140) },
+                {label: `angle ${angle}°`, make: () => rotated},
+                {label: `angle ${angle}°, contrast+`, make: () => rotated.clone().contrast(0.5)},
+                {label: `angle ${angle}°, normalize`, make: () => rotated.clone().normalize()},
+                {label: `angle ${angle}°, thr128`, make: () => applyThreshold(rotated, 128)},
+                {label: `angle ${angle}°, thr180`, make: () => applyThreshold(rotated, 180)},
+                {label: `angle ${angle}°, blur1+thr140`, make: () => applyThreshold(rotated.clone().blur(1), 140)},
             ];
 
             for (const v of variants) {
@@ -75,12 +74,15 @@ async function checkForQRCode(imagePath) {
                 const rotated = scaled.clone().rotate(angle, false);
 
                 const variants = [
-                    { label: `scaled 2x, angle ${angle}°`, make: () => rotated },
-                    { label: `scaled 2x, angle ${angle}°, contrast+`, make: () => rotated.clone().contrast(0.5) },
-                    { label: `scaled 2x, angle ${angle}°, normalize`, make: () => rotated.clone().normalize() },
-                    { label: `scaled 2x, angle ${angle}°, thr128`, make: () => applyThreshold(rotated, 128) },
-                    { label: `scaled 2x, angle ${angle}°, thr180`, make: () => applyThreshold(rotated, 180) },
-                    { label: `scaled 2x, angle ${angle}°, blur1+thr140`, make: () => applyThreshold(rotated.clone().blur(1), 140) },
+                    {label: `scaled 2x, angle ${angle}°`, make: () => rotated},
+                    {label: `scaled 2x, angle ${angle}°, contrast+`, make: () => rotated.clone().contrast(0.5)},
+                    {label: `scaled 2x, angle ${angle}°, normalize`, make: () => rotated.clone().normalize()},
+                    {label: `scaled 2x, angle ${angle}°, thr128`, make: () => applyThreshold(rotated, 128)},
+                    {label: `scaled 2x, angle ${angle}°, thr180`, make: () => applyThreshold(rotated, 180)},
+                    {
+                        label: `scaled 2x, angle ${angle}°, blur1+thr140`,
+                        make: () => applyThreshold(rotated.clone().blur(1), 140)
+                    },
                 ];
 
                 for (const v of variants) {
@@ -102,9 +104,4 @@ async function checkForQRCode(imagePath) {
     }
 }
 
-module.exports = {
-    checkForQRCode,
-    // Exporting helpers in case alternative detectors want to reuse them
-    decodeFromJimpImage,
-    applyThreshold,
-};
+module.exports = {checkForQRCode};
