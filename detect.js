@@ -1,148 +1,39 @@
 const path = require('path');
 const { promises: fs } = require('fs');
-const {Jimp} = require('jimp');
-const jsQR = require('jsqr');
+const { checkForQRCode } = require('./qrDetector2');
 
 const IMAGES_FOLDER = path.resolve(__dirname, 'images');
+const ALLOWED_EXTS = ['.png', '.jpg', '.jpeg'];
 
-function decodeFromJimpImage(img) {
-    // Build ImageData-compatible object for jsQR
-    const imageData = {
-        data: new Uint8ClampedArray(img.bitmap.data),
-        width: img.bitmap.width,
-        height: img.bitmap.height,
-    };
+async function main(folderPath = IMAGES_FOLDER) {
+    const startTime = process.hrtime.bigint();
 
-    return jsQR(
-        imageData.data,
-        imageData.width,
-        imageData.height,
-        { inversionAttempts: 'attemptBoth' }
-    );
-}
+    const entries = await fs.readdir(folderPath, { withFileTypes: true });
+    const imageFiles = entries
+        .filter((e) => e.isFile())
+        .map((e) => path.join(folderPath, e.name))
+        .filter((p) => ALLOWED_EXTS.includes(path.extname(p).toLowerCase()));
 
-function applyThreshold(src, threshold) {
-    const img = src.clone();
-    const { width, height, data } = img.bitmap;
-    // Assumes grayscale input for best results
-    for (let y = 0; y < height; y++) {
-        for (let x = 0; x < width; x++) {
-            const idx = (width * y + x) << 2;
-            const v = data[idx]; // r channel
-            const val = v >= threshold ? 255 : 0;
-            data[idx] = val;     // r
-            data[idx + 1] = val; // g
-            data[idx + 2] = val; // b
-            // alpha unchanged
-        }
+    if (imageFiles.length === 0) {
+        console.log(`No image files (${ALLOWED_EXTS.join(', ')}) found in: ${folderPath}`);
     }
-    return img;
-}
 
-async function checkForQRCode(imagePath) {
-    try {
-        const base = await Jimp.read(imagePath);
-        // Working copy in grayscale to reduce noise across attempts
-        base.greyscale();
-
-        // Small angle set to tolerate slight inclinations
-        const angles = [0, -2, 2, -5, 5, -10, 10, -15, 15];
-
-        // Try the original size first
-        for (const angle of angles) {
-            const rotated = base.clone().rotate(angle, false);
-
-            const variants = [
-                { label: `angle ${angle}°`, make: () => rotated },
-                { label: `angle ${angle}°, contrast+`, make: () => rotated.clone().contrast(0.5) },
-                { label: `angle ${angle}°, normalize`, make: () => rotated.clone().normalize() },
-                { label: `angle ${angle}°, thr128`, make: () => applyThreshold(rotated, 128) },
-                { label: `angle ${angle}°, thr180`, make: () => applyThreshold(rotated, 180) },
-                { label: `angle ${angle}°, blur1+thr140`, make: () => applyThreshold(rotated.clone().blur(1), 140) },
-            ];
-
-            for (const v of variants) {
-                const attempt = v.make();
-                const qrResult = decodeFromJimpImage(attempt);
-                if (qrResult) {
-                    console.log(`QR code detected! Content: ${qrResult.data} (${v.label})`);
-                    return true;
-                }
-            }
-        }
-
-        // If still not found, try a scaled-up pass to help with low-res images
-        const shouldScaleUp = Math.max(base.bitmap.width, base.bitmap.height) < 1000;
-        if (shouldScaleUp) {
-            const scaled = base.clone().scale(2);
-            for (const angle of angles) {
-                const rotated = scaled.clone().rotate(angle, false);
-
-                const variants = [
-                    { label: `scaled 2x, angle ${angle}°`, make: () => rotated },
-                    { label: `scaled 2x, angle ${angle}°, contrast+`, make: () => rotated.clone().contrast(0.5) },
-                    { label: `scaled 2x, angle ${angle}°, normalize`, make: () => rotated.clone().normalize() },
-                    { label: `scaled 2x, angle ${angle}°, thr128`, make: () => applyThreshold(rotated, 128) },
-                    { label: `scaled 2x, angle ${angle}°, thr180`, make: () => applyThreshold(rotated, 180) },
-                    { label: `scaled 2x, angle ${angle}°, blur1+thr140`, make: () => applyThreshold(rotated.clone().blur(1), 140) },
-                ];
-
-                for (const v of variants) {
-                    const attempt = v.make();
-                    const qrResult = decodeFromJimpImage(attempt);
-                    if (qrResult) {
-                        console.log(`QR code detected! Content: ${qrResult.data} (${v.label})`);
-                        return true;
-                    }
-                }
-            }
-        }
-
-        console.log(`No QR code found in: ${imagePath}`);
-        return false;
-    } catch (error) {
-        console.error(`Error checking QR code in ${imagePath}:`, error.message);
-        return false;
+    let detectedCount = 0;
+    for (const file of imageFiles) {
+        const hasQR = await checkForQRCode(file);
+        console.log(`${path.basename(file)}: ${hasQR ? 'QR found' : 'No QR'}`);
+        if (hasQR) detectedCount += 1;
     }
-}
 
-async function scanFolderForPNGs(folderPath = IMAGES_FOLDER) {
-    try {
-        const startNs = process.hrtime.bigint();
-
-        const entries = await fs.readdir(folderPath, { withFileTypes: true });
-        const allowedExts = ['.png', '.jpg', '.jpeg'];
-        const imageFiles = entries
-            .filter((e) => e.isFile())
-            .filter((e) => allowedExts.includes(path.extname(e.name).toLowerCase()))
-            .map((e) => path.join(folderPath, e.name));
-
-        if (imageFiles.length === 0) {
-            console.log(`No image files (${allowedExts.join(', ')}) found in: ${folderPath}`);
-            return { detected: 0, total: 0, ms: 0 };
-        }
-
-        let detectedCount = 0;
-        for (const file of imageFiles) {
-            const detected = await checkForQRCode(file);
-            if (detected) detectedCount += 1;
-        }
-
-        const endNs = process.hrtime.bigint();
-        const elapsedMs = Number(endNs - startNs) / 1e6;
-        const elapsedSec = (elapsedMs / 1000).toFixed(3);
-
-        console.log(`Finished scanning. ${detectedCount}/${imageFiles.length} image(s) had QR codes. Time: ${elapsedSec}s (${elapsedMs.toFixed(0)} ms).`);
-        return { detected: detectedCount, total: imageFiles.length, ms: Math.round(elapsedMs) };
-    } catch (err) {
-        console.error(`Failed to scan folder ${folderPath}:`, err.message);
-        return { detected: 0, total: 0, ms: 0 };
-    }
+    const endTime = process.hrtime.bigint();
+    const elapsedMs = Number(endTime - startTime) / 1e6;
+    console.log(`Summary: ${detectedCount}/${imageFiles.length} image(s) with QR.`);
+    console.log(`Total time: ${(elapsedMs / 1000).toFixed(3)}s (${elapsedMs.toFixed(0)} ms)`);
 }
 
 if (require.main === module) {
-    scanFolderForPNGs().catch((e) => {
-        console.error('Unexpected error:', e);
+    main().catch((err) => {
+        console.error('Error running detection:', err.message || err);
         process.exitCode = 1;
     });
 }
