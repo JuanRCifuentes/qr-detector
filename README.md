@@ -64,3 +64,11 @@ Summary: 8/12 image(s) with QR.
 AVERAGE: 22.2494
 
 #### Time to `No QR Found`
+
+- 2.4474 seconds
+- 2.6698 seconds
+- 2.4731 seconds
+- 2.4291 seconds
+- 2.5268 seconds
+
+AVERAGE: 2.50924
