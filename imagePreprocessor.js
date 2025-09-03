@@ -16,14 +16,14 @@ function applyThreshold(src, threshold) {
     return img;
 }
 
-function buildVariantsFor(baseImage) {
+function buildVariantsFor(baseImage, prefix) {
     return [
-        { label: 'base image', make: () => baseImage },
-        { label: 'contrast+', make: () => baseImage.clone().contrast(0.5) },
-        { label: 'normalize', make: () => baseImage.clone().normalize() },
-        { label: 'thr128', make: () => applyThreshold(baseImage, 128) },
-        { label: 'thr180', make: () => applyThreshold(baseImage, 180) },
-        { label: 'blur1+thr140', make: () => applyThreshold(baseImage.clone().blur(1), 140) },
+        { label: `${prefix} base image`, make: () => baseImage },
+        { label: `${prefix} contrast+`, make: () => baseImage.clone().contrast(0.5) },
+        { label: `${prefix} normalize`, make: () => baseImage.clone().normalize() },
+        { label: `${prefix} thr128`, make: () => applyThreshold(baseImage, 128) },
+        { label: `${prefix} thr180`, make: () => applyThreshold(baseImage, 180) },
+        { label: `${prefix} blur1+thr140`, make: () => applyThreshold(baseImage.clone().blur(1), 140) },
     ];
 }
 
@@ -37,21 +37,41 @@ async function getPreparedVariants(imagePath) {
 
     const attempts = [];
 
-    const variants = buildVariantsFor(base, `angle ${0}°`);
+    const variants = buildVariantsFor(base, '');
     for (const v of variants) {
         attempts.push({ label: v.label, image: v.make() });
     }
 
     if (shouldScaleUp(base)) {
         const scaled = base.clone().scale(2);
-        const variants = buildVariantsFor(scaled, `scaled 2x, angle ${0}°`);
+        const variants = buildVariantsFor(scaled, `scaled 2x`);
         for (const v of variants) {
             attempts.push({ label: v.label, image: v.make() });
         }
     }
+
     return attempts;
 }
 
+async function makeAttempts(imagePath, detectQRFunction) {
+    try {
+        const attempts = await getPreparedVariants(imagePath);
+        let attemptsCount = 0;
+        for (const {label, image} of attempts) {
+            const qr = detectQRFunction(image);
+            if (qr && qr.data) {
+                console.log(`Found QR code in attempt #: ${attemptsCount + 1}, ${label}.`);
+                return qr.data;
+            }
+            attemptsCount += 1;
+        }
+        return null;
+    } catch (err) {
+        console.error(`Error processing ${imagePath}:`, err.message || err);
+        return null;
+    }
+}
+
 module.exports = {
-    getPreparedVariants,
+    makeAttempts,
 };

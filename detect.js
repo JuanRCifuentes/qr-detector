@@ -1,6 +1,6 @@
 const path = require('path');
 const {promises: fs} = require('fs');
-const {getImages, iterateImages, logResults, getQRChosenMethod} = require("./helperFunctions");
+const {getImages, iterateImages, logResults, getQRChosenMethod, getAttemptsChosenMethod} = require("./helperFunctions");
 
 const IMAGES_FOLDER = path.resolve(__dirname, 'images');
 const ALLOWED_EXTENSIONS = ['.png', '.jpg', '.jpeg'];
@@ -10,8 +10,9 @@ async function main() {
 
     const imageFiles = await getImages(IMAGES_FOLDER, ALLOWED_EXTENSIONS);
 
-    const chosenMethod = getQRChosenMethod();
-    const detectedCount = await iterateImages(imageFiles, chosenMethod);
+    const detectChosenMethod = getQRChosenMethod();
+    const attemptsChosenMethod = getAttemptsChosenMethod();
+    const detectedCount = await iterateImages(imageFiles, attemptsChosenMethod, detectChosenMethod);
 
     const endTime = process.hrtime.bigint();
     logResults({startTime, endTime}, {detectedCount, imageFiles});

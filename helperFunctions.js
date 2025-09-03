@@ -1,10 +1,14 @@
 const path = require('path');
 const {promises: fs} = require('fs');
 const qrLib = require('./library-qr');
+const jimpLib = require('./imagePreprocessor');
 
 function getQRChosenMethod() {
-    return qrLib && qrLib.checkForQRCode;
-    // return typeof qrFunc === 'function' ? qrFunc : jsqrFunc;
+    return qrLib && qrLib.detectQR;
+}
+
+function getAttemptsChosenMethod() {
+    return jimpLib && jimpLib.makeAttempts();
 }
 
 async function getImages(imagesFolder, allowedExtensions) {
@@ -21,13 +25,13 @@ async function getImages(imagesFolder, allowedExtensions) {
     return imageFiles;
 }
 
-async function iterateImages(imageFiles, checkQRFunction) {
+async function iterateImages(imageFiles, detectQRFunction, makeAttemptsFunction) {
     let detectedCount = 0;
     for (const file of imageFiles) {
         console.log('=====')
 
         const startTime = process.hrtime.bigint();
-        const hasQR = await checkQRFunction(file);
+        const hasQR = await makeAttemptsFunction(file, detectQRFunction);
         const endTime = process.hrtime.bigint();
 
         console.log(`Time for ${path.basename(file)}: ${Number(endTime - startTime) / 1e6}ms`);
@@ -50,4 +54,5 @@ module.exports = {
     iterateImages,
     logResults,
     getQRChosenMethod,
+    getAttemptsChosenMethod,
 };
