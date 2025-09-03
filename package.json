@@ -1,0 +1,17 @@
+{
+  "name": "qr_detection",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "node detect.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "jimp": "^1.6.0",
+    "jsqr": "^1.4.0"
+  }
+}
