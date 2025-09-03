@@ -28,7 +28,7 @@ async function detectQrInImages(imageFiles, checkQRFunction) {
     let detectedCount = 0;
     for (const file of imageFiles) {
         const hasQR = await checkQRFunction(file);
-        console.log(`${path.basename(file)}: ${hasQR ? 'QR found' : 'No QR'}`);
+        console.log(`${path.basename(file)}: ${hasQR ? 'QR found' : 'No QR Found'}`);
         if (hasQR) detectedCount += 1;
     }
     return detectedCount;
