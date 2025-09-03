@@ -8,7 +8,7 @@ function getQRChosenMethod() {
 }
 
 function getAttemptsChosenMethod() {
-    return jimpLib && jimpLib.makeAttempts();
+    return jimpLib && jimpLib.makeAttempts;
 }
 
 async function getImages(imagesFolder, allowedExtensions) {
