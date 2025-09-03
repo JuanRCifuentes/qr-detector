@@ -10,7 +10,7 @@ async function main() {
 
     const imageFiles = await getImages(IMAGES_FOLDER, ALLOWED_EXTENSIONS);
 
-    const chosenMethod = getQRChosenMethod('qr');
+    const chosenMethod = getQRChosenMethod();
     const detectedCount = await detectQrInImages(imageFiles, chosenMethod);
 
     const endTime = process.hrtime.bigint();

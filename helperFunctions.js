@@ -1,19 +1,10 @@
 const path = require('path');
 const {promises: fs} = require('fs');
 const qrLib = require('./library-qr');
-const jsqrLib = require('./library-jsQR');
 
-function getQRChosenMethod(chosenMethod) {
-    const qrFunc = qrLib && qrLib.checkForQRCode;
-    const jsqrFunc = jsqrLib && jsqrLib.checkForQRCode;
-    switch (chosenMethod) {
-        case 'qr':
-            return typeof qrFunc === 'function' ? qrFunc : jsqrFunc;
-        case 'jsqr':
-            return typeof jsqrFunc === 'function' ? jsqrFunc : qrFunc;
-        default:
-            return typeof qrFunc === 'function' ? qrFunc : jsqrFunc;
-    }
+function getQRChosenMethod() {
+    return qrLib && qrLib.checkForQRCode;
+    // return typeof qrFunc === 'function' ? qrFunc : jsqrFunc;
 }
 
 async function getImages(imagesFolder, allowedExtensions) {
