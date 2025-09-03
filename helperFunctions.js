@@ -1,7 +1,7 @@
 const path = require('path');
 const {promises: fs} = require('fs');
-const qrLib = require('./library-qr');
-const jimpLib = require('./imagePreprocessor');
+const qrLib = require('./detect-jsqr');
+const jimpLib = require('./attempt-jimp');
 
 function getQRChosenMethod() {
     return qrLib && qrLib.detectQR;

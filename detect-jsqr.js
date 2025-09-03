@@ -1,6 +1,6 @@
 const jsQR = require('jsqr');
 
-function detectQR(img) {
+function detectJsqr(img) {
     const imageData = {
         data: new Uint8ClampedArray(img.bitmap.data),
         width: img.bitmap.width,
@@ -9,4 +9,4 @@ function detectQR(img) {
     return jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'attemptBoth' });
 }
 
-module.exports = { detectQR };
+module.exports = { detectQR: detectJsqr };
